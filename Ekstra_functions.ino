@@ -1,32 +1,13 @@
 
-//resets the RTC if a day have gone by
-void resetRTC(long RTCTime)
-{
-  // If The total time that has passed in the RTC clock is 
-  // greater then 86400s = 24h then reset the clock
-  //test set to 15 seconds
-  if (RTCTime >=15)
-  {
-  rtc.adjust(dt);
-  }
-}
-
-//measures the temperature and returns the temperature 
-float measTemp()
-{
-  delay(2000);
-  float t = dht.readTemperature();
-  Serial.print("temperature: ");
-  Serial.println(t);
-
-  return t;
-}
 
 //measures the humidity and returns the humidity
 float measHumid()
 {
+  //initializing
   delay(2000);
+  //reads the humidity to be returned
   float h = dht.readHumidity();
+  //prints the humidity
   Serial.print("humidity: ");
   Serial.println(h);
   
@@ -37,9 +18,6 @@ float measHumid()
 //controls the fan to adjust the humidity of the system
 void fanControl(float humid, int fanTime, int minHum, int maxHum, int pinFan)
 {
-  //the minimum and maxmimum value of the relative humidity in the system
-
-
   //activates the fan for a full system-cycle if the relative humidity is above the maximum value
   if (humid >= maxHum)
   {
@@ -61,21 +39,15 @@ void fanControl(float humid, int fanTime, int minHum, int maxHum, int pinFan)
     delay(fanTime);
     digitalWrite(pinFan, LOW);
   }
-
 }
+
 
 //measures the pH-value of the water, prints the value to the console and returns the pH-value
 float measPH()
 {
   float pHData = analogRead(pHSensor);
-  //test
-  Serial.print("pHData = ");
-  Serial.println(pHData);
-  
   float volt = (pHData / 1023) * 5;
   float pH = (-5.8816 * volt) + 21.802;
-  Serial.print("pH i meas");
-  Serial.println(pH);
   return pH;
 }
 
@@ -91,10 +63,7 @@ float evalpH(float pHpre)
     for (int i = 0; i < 10; i++)
     {
       float pH = measPH();
-      sum = sum + pH;
-      //test
-      Serial.print("pH sum: ");
-      Serial.println(sum);
+      sum += pH;
     }
     //averages the sum 
     float averagepH = sum / 10;
@@ -123,28 +92,32 @@ void setPHPumpeState(float averagepH, int pumpTime)
   else Serial.println("pH acceptable");
 }
 
-//turns on light if 14 hours have not gone by, else light turns off
+//turns on light in the interval between start time and stop time
 void setLight(long timeRTC, long startTime, long stopTime)
 { 
-
-  if(timeRTC > startTime && timeRTC<stopTime)
+  //if start lies earlier in the day than stop
+  if(startTime<stopTime)
   {
-    digitalWrite(pLED, HIGH);
+    if(timeRTC > startTime && timeRTC<stopTime)
+    {
+      digitalWrite(pLED, HIGH);
+    }
+    else digitalWrite(pLED, LOW);
+  }
+  //if start lies later in the day than stop
+  else if (startTime>stopTime)
+  {
+    if(startTime< timeRTC && stopTime < timeRTC)
+    {
+      digitalWrite(pLED, HIGH);
+    }
+    else if (startTime>timeRTC && stopTime>timeRTC)
+    {
+      digitalWrite(pLED, HIGH);
+    }
+    else digitalWrite(pLED, LOW);
   }
   else digitalWrite(pLED, LOW);
- 
-  
-  
-  /*
-  // tunrns on the led if the time form the RTC is lower then 50400s = 14h
-  if (timeRTC < 50400)
-  {
-   digitalWrite(pLED,HIGH);
-  }
-  else 
-  {
-   digitalWrite(pLED,LOW);
-  }*/
 }
 
 
@@ -159,10 +132,11 @@ void controlWaterValve(int waterLevel, int valveOpenTime, int waterSettelingTime
   Serial.print("højde ");
   Serial.println(toMeasure);
 
+  //turns off the airpump to prewent waves in the water
   if(toMeasure < waterLevel)
   {
     digitalWrite(pinAir, LOW);
-    //delay(120000);
+    delay(120000);
   }
   //raises the water level while the water level is too low
   while (toMeasure < waterLevel) {
