@@ -106,6 +106,6 @@ void loop()
     }
 
   //controls the fan, when humidty is at a certain level
-  fanControl(measHumid(), 5000, 60, 80, pFan);
+  fanControl(measHumid(), 5000, 50, 80, pFan);
 }
 
